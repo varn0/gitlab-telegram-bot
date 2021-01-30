@@ -61,7 +61,7 @@ def webhook():
     if kind == 'push':
         msg = generatePushMsg(data)
     elif kind == 'tag_push':
-        msg = generatePushMsg(data)  # TODO:Make own function for this
+        msg = generatePushMsg(data)
     elif kind == 'issue':
         msg = generateIssueMsg(data)
     elif kind == 'note':
@@ -115,6 +115,7 @@ def generateIssueMsg(data):
 
     msg = msg + '[{0}]({1})'\
         .format(data['object_attributes']['title'], data['object_attributes']['url'])
+    print(msg)
     return msg
 
 
@@ -140,7 +141,24 @@ def generateWikiMsg(data):
 
 
 def generatePipelineMsg(data):
-    return 'new pipeline stuff'
+    outcome = data['object_attributes']['status']
+    if outcome == 'success':
+        msg = 'Pipeline for project *{0}* finished successfully \U0001F44D \n' \
+            .format(data['project']['name'])
+        for job in data['builds']:
+            if job['artifacts_file']['filename'] is not None:
+                msg = msg + 'There is a new artifact at {0}-/jobs/artifacts/{1}/download?job={2} \n' \
+                    .format(data['project']['web_url'], data['object_attributes']['ref'], job['name'])
+        # https://example.com/<namespace>/<project>/-/jobs/artifacts/<ref>/download?job=<job_name>
+    else:
+        msg = 'Pipeline for project *{0}* has failed \U0001F44D \n' \
+            .format(data['project']['name'])
+        for job in data['builds']:
+            if job['status'] == 'failed':
+                msg = msg + 'Job *{0}* failed \U0001F534 \n' \
+                    .format(data['builds']['name'])
+    print(msg)
+    return msg
 
 
 def generateBuildMsg(data):
